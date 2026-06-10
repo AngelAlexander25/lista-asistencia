@@ -1,7 +1,5 @@
 import streamlit as st
 import plotly.graph_objects as go
-import plotly.express as px
-import pandas as pd
 
 st.set_page_config(
     page_title="Dashboard — Lista de asistencia",
@@ -12,8 +10,7 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
-html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
+html, body, [class*="css"] { font-family: Arial, sans-serif; }
 .block-container { padding: 2rem 3rem 3rem; max-width: 1400px; }
 .metric-card {
     background: #ffffff;
@@ -66,7 +63,7 @@ COLORS = {
 CHART_LAYOUT = dict(
     plot_bgcolor="white",
     paper_bgcolor="white",
-    font=dict(family="Inter, sans-serif", color=COLORS["text"]),
+    font=dict(family="Arial, sans-serif", color=COLORS["text"]),
     margin=dict(t=20, b=40, l=50, r=20),
     height=340,
 )
