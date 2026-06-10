@@ -33,10 +33,10 @@ html, body, [class*="css"] { font-family: Arial, sans-serif; }
 .tag-red { background:#fee2e2; color:#991b1b; padding:3px 10px; border-radius:20px; font-size:0.75rem; font-weight:600; }
 .tag-amber { background:#fef3c7; color:#92400e; padding:3px 10px; border-radius:20px; font-size:0.75rem; font-weight:600; }
 .tag-green { background:#d1fae5; color:#065f46; padding:3px 10px; border-radius:20px; font-size:0.75rem; font-weight:600; }
-.pending-banner {
-    background: #fffbeb;
-    border: 1px solid #fcd34d;
-    border-left: 4px solid #f59e0b;
+.correction-banner {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-left: 4px solid #2563eb;
     border-radius: 8px;
     padding: 1rem 1.25rem;
     margin-bottom: 1.5rem;
@@ -76,6 +76,17 @@ def axis_style(title=""):
         zeroline=False, linecolor="#e5e7eb", showline=True
     )
 
+# ─── DATOS CORREGIDOS ─────────────────────────────────────────────────────────
+tenants        = ["aamx02", "aamx04", "aamx09", "aamx03", "aamx01"]
+workers_reales = [77,       313,      1761,     803,      1028]
+sal_mov_regs   = [141,      974,      4709,     6445,     13831]
+mov_x_worker   = [2,        3,        3,        8,        13]
+
+# Subqueries y tiempos con workers reales (× 34 = 17 días × 2 queries por worker)
+t_subq   = [w * 34 for w in workers_reales]
+t_tiempo = [round(w * 34 * 0.000375, 1) for w in workers_reales]
+t_colors = [COLORS["red"] if w >= 800 else COLORS["amber"] if w >= 300 else COLORS["green"] for w in workers_reales]
+
 # ─── HEADER ───────────────────────────────────────────────────────────────────
 st.markdown("""
 <div style="margin-bottom:2rem">
@@ -111,7 +122,7 @@ col_a, col_b = st.columns(2)
 
 workers_pts = [50, 100, 200, 312, 500, 800, 1000, 1761]
 subq_total  = [w * 34 for w in workers_pts]
-subq_colors = [COLORS["green"] if s < 10000 else COLORS["amber"] if s < 30000 else COLORS["red"] for s in subq_total]
+subq_colors = [COLORS["green"] if s < 10200 else COLORS["amber"] if s < 27200 else COLORS["red"] for s in subq_total]
 
 with col_a:
     fig = go.Figure()
@@ -133,11 +144,11 @@ with col_a:
         showlegend=False, bargap=0.35
     )
     fig.add_hline(y=29937, line_dash="dot", line_color=COLORS["amber"], line_width=1.5,
-                  annotation_text="aamx09 actual (Error 1 solo)", annotation_font_size=10,
+                  annotation_text="Error 1 solo (1 query/worker)", annotation_font_size=10,
                   annotation_font_color=COLORS["amber"])
     fig.add_annotation(x="1761", y=59874*1.18, text="<b>aamx09<br>59,874</b>",
                        showarrow=False, font=dict(color=COLORS["red"], size=10))
-    st.plotly_chart(fig, width="stretch")
+    st.plotly_chart(fig, use_container_width=True)
 
 with col_b:
     cats = ["Solo Error 1<br>(SELECT)", "Error 1 + Error 2<br>(SELECT + WHERE)"]
@@ -162,7 +173,7 @@ with col_b:
         text="<b>+29,937 extra</b><br>por duplicación<br>en WHERE/CASE",
         showarrow=False, font=dict(color="white", size=11),
         bgcolor=COLORS["red"], borderpad=6, bordercolor=COLORS["red"])
-    st.plotly_chart(fig2, width="stretch")
+    st.plotly_chart(fig2, use_container_width=True)
 
 st.markdown("<hr>", unsafe_allow_html=True)
 
@@ -171,7 +182,7 @@ st.markdown('<p class="section-title">Tiempo de respuesta y evidencia de EXPLAIN
 col_c, col_d = st.columns(2)
 
 tiempos = [round(w * 34 * 0.000375, 2) for w in workers_pts]
-time_colors = [COLORS["green"] if t < 5 else COLORS["amber"] if t < 15 else COLORS["red"] for t in tiempos]
+time_colors = [COLORS["green"] if t < 4 else COLORS["amber"] if t < 10 else COLORS["red"] for t in tiempos]
 
 with col_c:
     fig3 = go.Figure()
@@ -195,13 +206,13 @@ with col_c:
         text="<b>aamx09: ~22 seg</b>", showarrow=True, arrowhead=2,
         arrowcolor=COLORS["red"], font=dict(color=COLORS["red"], size=10),
         ax=-60, ay=-30)
-    fig3.add_hrect(y0=0, y1=5, fillcolor=COLORS["green_l"], opacity=0.4, line_width=0)
-    fig3.add_hrect(y0=5, y1=15, fillcolor=COLORS["amber_l"], opacity=0.4, line_width=0)
-    fig3.add_hrect(y0=15, y1=max(tiempos)*1.2, fillcolor=COLORS["red_l"], opacity=0.3, line_width=0)
-    fig3.add_annotation(x="50", y=2.5, text="Leve", showarrow=False, font=dict(color=COLORS["green"], size=10))
-    fig3.add_annotation(x="50", y=10, text="Medio", showarrow=False, font=dict(color=COLORS["amber"], size=10))
-    fig3.add_annotation(x="50", y=19, text="Crítico", showarrow=False, font=dict(color=COLORS["red"], size=10))
-    st.plotly_chart(fig3, width="stretch")
+    fig3.add_hrect(y0=0,  y1=4,  fillcolor=COLORS["green_l"], opacity=0.4, line_width=0)
+    fig3.add_hrect(y0=4,  y1=10, fillcolor=COLORS["amber_l"], opacity=0.4, line_width=0)
+    fig3.add_hrect(y0=10, y1=max(tiempos)*1.2, fillcolor=COLORS["red_l"], opacity=0.3, line_width=0)
+    fig3.add_annotation(x="50", y=2,  text="Leve",    showarrow=False, font=dict(color=COLORS["green"], size=10))
+    fig3.add_annotation(x="50", y=7,  text="Medio",   showarrow=False, font=dict(color=COLORS["amber"], size=10))
+    fig3.add_annotation(x="50", y=19, text="Crítico", showarrow=False, font=dict(color=COLORS["red"],   size=10))
+    st.plotly_chart(fig3, use_container_width=True)
 
 with col_d:
     explain_labels = ["Sin índice<br>(Seq Scan)", "Con índice<br>(Bitmap Scan)"]
@@ -230,7 +241,7 @@ with col_d:
         text="<b>shared hit: 5</b><br>solo lee 5 bloques",
         showarrow=False, font=dict(color="white", size=10),
         bgcolor=COLORS["green"], borderpad=5)
-    st.plotly_chart(fig4, width="stretch")
+    st.plotly_chart(fig4, use_container_width=True)
 
 st.markdown("<hr>", unsafe_allow_html=True)
 
@@ -238,38 +249,49 @@ st.markdown("<hr>", unsafe_allow_html=True)
 st.markdown('<p class="section-title">Comparativa entre tenants</p>', unsafe_allow_html=True)
 
 st.markdown("""
-<div class="pending-banner">
-<strong>Datos parciales:</strong> Los registros de SalaryMovementRecord se usan como aproximación de workers para aamx01, aamx02, aamx03 y aamx04. 
-El conteo real de workers y la verificación de índices en esos tenants está pendiente de confirmar.
+<div class="correction-banner">
+  <strong>Datos corregidos:</strong> Las gráficas anteriores usaban registros de <code>SalaryMovementRecord</code> como aproximación de workers,
+  lo que inflaba los números (un worker puede acumular 10–13 movimientos). 
+  Los valores ahora reflejan el <strong>conteo real de workers</strong> confirmado en cada tenant.
+  aamx09 es el más afectado con 1,761 workers reales.
 </div>
 """, unsafe_allow_html=True)
-
-tenants   = ["aamx02", "aamx04", "aamx09", "aamx03", "aamx01"]
-registros = [141,       974,      4709,     6445,     13831]
-t_colors  = [COLORS["green"] if r < 1000 else COLORS["amber"] if r < 5000 else COLORS["red"] for r in registros]
 
 col_e, col_f = st.columns(2)
 
 with col_e:
-    fig5 = go.Figure(go.Bar(
-        x=tenants, y=registros,
+    fig5 = go.Figure()
+    fig5.add_trace(go.Bar(
+        name="Workers reales",
+        x=tenants, y=workers_reales,
         marker_color=t_colors, marker_line_width=0,
-        text=[f"{r:,}" for r in registros],
+        text=[f"{w:,}" for w in workers_reales],
         textposition="outside", textfont=dict(size=11),
-        hovertemplate="<b>%{x}</b><br>%{y:,} registros<extra></extra>"
+        hovertemplate="<b>%{x}</b><br>%{y:,} workers reales<extra></extra>"
+    ))
+    fig5.add_trace(go.Bar(
+        name="Registros SalaryMovProm",
+        x=tenants, y=sal_mov_regs,
+        marker_color="rgba(150,150,150,0.35)",
+        marker_line_color="rgba(150,150,150,0.6)",
+        marker_line_width=1,
+        text=[f"{r:,}" for r in sal_mov_regs],
+        textposition="outside", textfont=dict(size=11, color=COLORS["muted"]),
+        hovertemplate="<b>%{x}</b><br>%{y:,} registros SalaryMovProm<extra></extra>"
     ))
     fig5.update_layout(
         **CHART_LAYOUT,
-        title=dict(text="Registros en SalaryMovementRecord por tenant", font=dict(size=13, color=COLORS["text"]), x=0),
+        title=dict(text="Workers reales vs registros SalaryMovementRecord", font=dict(size=13, color=COLORS["text"]), x=0),
         xaxis=axis_style("Tenant"),
-        yaxis=dict(**axis_style("Registros"), tickformat=","),
-        showlegend=False, bargap=0.4
+        yaxis=dict(**axis_style("Cantidad"), tickformat=","),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0, font=dict(size=11)),
+        barmode="group", bargap=0.3, bargroupgap=0.05
     )
-    st.plotly_chart(fig5, width="stretch")
+    st.plotly_chart(fig5, use_container_width=True)
 
 with col_f:
-    t_idx_tiempo  = [round(r * 34 * 0.000375, 1) for r in registros]
-    t_noidx_tiempo = [round(r * 34 * 0.0022,  1) for r in registros]
+    t_idx_tiempo   = [round(w * 34 * 0.000375, 1) for w in workers_reales]
+    t_noidx_tiempo = [round(w * 34 * 0.0022,   1) for w in workers_reales]
 
     fig6 = go.Figure()
     fig6.add_trace(go.Bar(
@@ -296,7 +318,34 @@ with col_f:
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0, font=dict(size=11)),
         barmode="group", bargap=0.3, bargroupgap=0.05
     )
-    st.plotly_chart(fig6, width="stretch")
+    st.plotly_chart(fig6, use_container_width=True)
+
+# ─── TABLA resumen tenants ────────────────────────────────────────────────────
+st.markdown('<p class="section-title" style="margin-top:1rem">Resumen de datos por tenant</p>', unsafe_allow_html=True)
+
+header_cols = st.columns([1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.5])
+headers = ["Tenant", "Workers reales", "Reg. SalaryMov", "Mov/worker", "Subqueries", "Tiempo BD (idx)", "Severidad"]
+for col, h in zip(header_cols, headers):
+    col.markdown(f"<p style='font-size:0.75rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em'>{h}</p>", unsafe_allow_html=True)
+
+severity = []
+for w in workers_reales:
+    if w >= 800:
+        severity.append(('<span class="tag-red">Crítico</span>', COLORS["red"]))
+    elif w >= 300:
+        severity.append(('<span class="tag-amber">Medio</span>', COLORS["amber"]))
+    else:
+        severity.append(('<span class="tag-green">Leve</span>', COLORS["green"]))
+
+for i, tenant in enumerate(tenants):
+    row_cols = st.columns([1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.5])
+    row_cols[0].markdown(f"<code style='font-size:0.85rem'>{tenant}</code>", unsafe_allow_html=True)
+    row_cols[1].markdown(f"<b style='color:{t_colors[i]}'>{workers_reales[i]:,}</b>", unsafe_allow_html=True)
+    row_cols[2].markdown(f"<span style='color:#9ca3af'>{sal_mov_regs[i]:,}</span>", unsafe_allow_html=True)
+    row_cols[3].markdown(f"~{mov_x_worker[i]}x", unsafe_allow_html=True)
+    row_cols[4].markdown(f"{t_subq[i]:,}", unsafe_allow_html=True)
+    row_cols[5].markdown(f"~{t_tiempo[i]} seg", unsafe_allow_html=True)
+    row_cols[6].markdown(severity[i][0], unsafe_allow_html=True)
 
 st.markdown("<hr>", unsafe_allow_html=True)
 
@@ -304,7 +353,6 @@ st.markdown("<hr>", unsafe_allow_html=True)
 st.markdown('<p class="section-title">Escala de impacto según workers del tenant</p>', unsafe_allow_html=True)
 
 workers_full = list(range(50, 2000, 50))
-subq_full    = [w * 34 for w in workers_full]
 tiempo_full  = [round(w * 34 * 0.000375, 2) for w in workers_full]
 
 fig7 = go.Figure()
@@ -314,11 +362,14 @@ fig7.add_trace(go.Scatter(
     fill="tozeroy", fillcolor="rgba(226,75,74,0.05)",
     hovertemplate="<b>%{x} workers</b><br>~%{y:.1f} seg estimados<extra></extra>"
 ))
-fig7.add_vrect(x0=0,   x1=300,  fillcolor=COLORS["green_l"], opacity=0.5, line_width=0, annotation_text="Leve", annotation_position="top left", annotation_font_color=COLORS["green"], annotation_font_size=11)
-fig7.add_vrect(x0=300, x1=800,  fillcolor=COLORS["amber_l"], opacity=0.5, line_width=0, annotation_text="Medio", annotation_position="top left", annotation_font_color=COLORS["amber"], annotation_font_size=11)
-fig7.add_vrect(x0=800, x1=2000, fillcolor=COLORS["red_l"],   opacity=0.4, line_width=0, annotation_text="Crítico", annotation_position="top left", annotation_font_color=COLORS["red"], annotation_font_size=11)
+fig7.add_vrect(x0=0,   x1=300,  fillcolor=COLORS["green_l"], opacity=0.5, line_width=0, annotation_text="Leve",    annotation_position="top left", annotation_font_color=COLORS["green"], annotation_font_size=11)
+fig7.add_vrect(x0=300, x1=800,  fillcolor=COLORS["amber_l"], opacity=0.5, line_width=0, annotation_text="Medio",   annotation_position="top left", annotation_font_color=COLORS["amber"], annotation_font_size=11)
+fig7.add_vrect(x0=800, x1=2000, fillcolor=COLORS["red_l"],   opacity=0.4, line_width=0, annotation_text="Crítico", annotation_position="top left", annotation_font_color=COLORS["red"],   annotation_font_size=11)
 fig7.add_vline(x=1761, line_dash="dash", line_color=COLORS["red"], line_width=1.5,
                annotation_text="aamx09 (1,761 workers)", annotation_font_color=COLORS["red"], annotation_font_size=10)
+for t, w, color in [(workers_reales[i], tenants[i], t_colors[i]) for i in range(len(tenants)) if tenants[i] != "aamx09"]:
+    fig7.add_vline(x=t, line_dash="dot", line_color=color, line_width=1,
+                   annotation_text=f"{w} ({t:,}w)", annotation_font_color=color, annotation_font_size=9)
 fig7.update_layout(
     **dict(CHART_LAYOUT, height=300),
     title=dict(text="Tiempo estimado de respuesta en BD según workers del tenant", font=dict(size=13, color=COLORS["text"]), x=0),
@@ -326,13 +377,13 @@ fig7.update_layout(
     yaxis=axis_style("Segundos estimados"),
     showlegend=False
 )
-st.plotly_chart(fig7, width="stretch")
+st.plotly_chart(fig7, use_container_width=True)
 
 col_g, col_h, col_i = st.columns(3)
 for col, color, bg, title, workers_range, subq_range, tiempo_range in [
-    (col_g, COLORS["green"], COLORS["green_l"], "Leve", "1 — 300", "hasta 10,200", "< 4 seg"),
-    (col_h, COLORS["amber"], COLORS["amber_l"], "Medio", "300 — 800", "10,200 — 27,200", "4 — 10 seg"),
-    (col_i, COLORS["red"],   COLORS["red_l"],   "Crítico", "800+", "más de 27,200", "+10 seg"),
+    (col_g, COLORS["green"], COLORS["green_l"], "Leve",    "1 — 300",   "hasta 10,200",       "< 4 seg"),
+    (col_h, COLORS["amber"], COLORS["amber_l"], "Medio",   "300 — 800", "10,200 — 27,200",    "4 — 10 seg"),
+    (col_i, COLORS["red"],   COLORS["red_l"],   "Crítico", "800+",      "más de 27,200",      "+10 seg"),
 ]:
     with col:
         st.markdown(f"""
@@ -348,7 +399,8 @@ for col, color, bg, title, workers_range, subq_range, tiempo_range in [
 st.markdown("<hr>", unsafe_allow_html=True)
 st.markdown("""
 <p style="font-size:0.75rem;color:#9ca3af;text-align:center">
-Tiempos estimados basados en 0.375ms/subquery medido en EXPLAIN ANALYZE sobre aamx09 con índices activos · 
+Tiempos estimados basados en 0.375ms/subquery medido en EXPLAIN ANALYZE sobre aamx09 con índices activos ·
+Workers reales confirmados mediante COUNT(*) en cada tenant ·
 Tenants sin índices verificados pueden superar significativamente estos valores ·
 Evidencia recopilada en DBeaver conectado a base de datos abrhil
 </p>
